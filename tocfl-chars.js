@@ -176,7 +176,7 @@ const values = rawValues.map(({ word, pinyin, level, zhuyin }) => ({
       value.word,
       value.pinyin,
       value.otherPinyin,
-      value.level.toString(),
+      `Level ${value.level}`,
       translations.slice(0, 1).join(""),
       translations.slice(1).join(", "),
       value.parent !== undefined ? value.parent.word : "",
