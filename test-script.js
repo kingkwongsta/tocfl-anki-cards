@@ -6,7 +6,13 @@ const { numberedToAccent, fixPinyin } = require("./pinyin");
 const { sortDescriptions } = require("./sort-descriptions");
 
 const dataDir = "./data";
+const outputFileName = "testing.csv";
 const dictionaryFile = `${dataDir}/cedict_1_0_ts_utf-8_mdbg.txt`;
+
+// Get a list of all CSV files in the data directory
+const csvFiles = fs
+  .readdirSync(dataDir)
+  .filter((file) => path.extname(file) === ".csv");
 
 /**
  * Read the Zhuyin (注音) column from a CSV file
