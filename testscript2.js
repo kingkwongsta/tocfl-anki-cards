@@ -8,6 +8,12 @@ const { sortDescriptions } = require("./sort-descriptions");
 const dataDir = "./data";
 const dictionaryFile = `${dataDir}/cedict_1_0_ts_utf-8_mdbg.txt`;
 
+// Get all CSV files in the 'data' folder
+const importFiles = fs
+  .readdirSync(dataDir)
+  .filter((file) => file.endsWith(".csv"))
+  .map((file) => `${dataDir}/${file}`);
+
 /**
  * Read the Zhuyin (注音) column from a CSV file
  * @param {string} fileName
@@ -51,7 +57,7 @@ if (process.argv.length > 2 && process.argv[2] === "--tabs") {
 }
 
 /** @type {{word: string, pinyin: string, level: number, zhuyin: string }[]} */
-const rawValues = files
+const rawValues = importFiles
   .map((fileName) => {
     const level = parseInt(/^.*\/(\d+)\.csv$/.exec(fileName)[1]);
     const contents = fs.readFileSync(`${fileName}`, "utf8");
