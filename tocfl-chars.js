@@ -1,170 +1,246 @@
-const fs = require('fs');
-const cccedict = require('parse-cc-cedict');
+/**
+ * Use the following command in terminal
+ * node [filename.js] [level] > [output.csv]
+ */
 
-const { csvEscape } = require('./escape');
-const { numberedToAccent, fixPinyin } = require('./pinyin');
-const { sortDescriptions } = require('./sort-descriptions');
+const fs = require("fs");
+const cccedict = require("parse-cc-cedict");
 
-const dataDir = './data';
+const { csvEscape } = require("./escape");
+const { numberedToAccent, fixPinyin } = require("./pinyin");
+const { sortDescriptions } = require("./sort-descriptions");
+
+const dataDir = "./data";
 const dictionaryFile = `${dataDir}/cedict_1_0_ts_utf-8_mdbg.txt`;
 
-/** Read the word and pinyin columns from a csv file
- * @param {string} fileName
- * @returns {{word: string, pinyin: string, level: number }[]}
- */
-function readCsv(fileName) {
-    const level = parseInt(/^.*\/(\d+)\.csv$/.exec(fileName)[1]);
-    const contents = fs.readFileSync(`${fileName}`, 'utf8');
-    const lines = contents.split('\n');
-    const headers = lines[0].split(',');
-    return lines.slice(1)
-        .filter(line => line.trim() !== '')
-        .map(line => {
-            const cells = line.split(',');
-            if(cells.length !== headers.length)
-                throw new Error(`parse error for line: ${fileName}: ${JSON.stringify(cells)}`);
+// Get all CSV files in the 'data' folder
+const importFiles = fs
+  .readdirSync(dataDir)
+  .filter((file) => file.endsWith(".csv"))
+  .map((file) => `${dataDir}/${file}`);
 
-            return headers.length === 8
-                ? { word: cells[1].trim(), pinyin: cells[3].trim(), level }
-                : { word: cells[0].trim(), pinyin: cells[2].trim(), level };
-        });
+// Get user-specified level from command line arguments
+const userLevel = process.argv[2] ? parseInt(process.argv[2]) : null;
+
+/**
+ * Read the Zhuyin (注音) column from a CSV file
+ * @param {string} fileName
+ * @returns {string[]}
+ */
+function readZhuyinColumn(fileName) {
+  const contents = fs.readFileSync(`${fileName}`, "utf8");
+  const lines = contents.split("\n");
+  const headers = lines[0].split(",");
+
+  // Find the index of the "注音" column
+  const zhuyinIndex = headers.indexOf("注音");
+
+  if (zhuyinIndex === -1) {
+    throw new Error('Column "注音" not found in the CSV file.');
+  }
+
+  return lines
+    .slice(1)
+    .filter((line) => line.trim() !== "")
+    .map((line) => {
+      const cells = line.split(",");
+      if (cells.length !== headers.length) {
+        throw new Error(
+          `parse error for line: ${fileName}: ${JSON.stringify(cells)}`
+        );
+      }
+
+      return cells[zhuyinIndex].trim();
+    });
 }
 
-let seperationCharacter = ',';
+let separationCharacter = ",";
 let files;
 
-if(process.argv.length > 2 && process.argv[2] === '--tabs') {
-    seperationCharacter = '\t';
-    files = process.argv.slice(3);
+if (process.argv.length > 2 && process.argv[2] === "--tabs") {
+  separationCharacter = "\t";
+  files = process.argv.slice(3);
 } else {
-    files = process.argv.slice(2);
+  files = process.argv.slice(2);
 }
 
-/** @type {{word: string, pinyin: string, level: number}[]} */
-const rawValues = files
-    .map(readCsv)
-    .reduce((p, c) => p.concat(c), []);
+/** @type {{word: string, pinyin: string, level: number, zhuyin: string }[]} */
+const rawValues = importFiles
+  .map((fileName) => {
+    const level = parseInt(/^.*\/(\d+)\.csv$/.exec(fileName)[1]);
+
+    // Filter based on user-specified level
+    if (userLevel !== null && level !== userLevel) {
+      return [];
+    }
+
+    const contents = fs.readFileSync(`${fileName}`, "utf8");
+    const lines = contents.split("\n");
+    const headers = lines[0].split(",");
+    const zhuyinColumn = readZhuyinColumn(fileName);
+
+    return lines
+      .slice(1)
+      .filter((line) => line.trim() !== "")
+      .map((line, index) => {
+        const cells = line.split(",");
+        if (cells.length !== headers.length) {
+          throw new Error(
+            `parse error for line: ${fileName}, line ${
+              index + 1
+            }: ${JSON.stringify(cells)}`
+          );
+        }
+
+        return headers.length === 8
+          ? {
+              word: cells[1].trim(),
+              pinyin: cells[3].trim(),
+              level,
+              zhuyin: zhuyinColumn[index],
+            }
+          : {
+              word: cells[0].trim(),
+              pinyin: cells[2].trim(),
+              level,
+              zhuyin: zhuyinColumn[index],
+            };
+      });
+  })
+  .reduce((p, c) => p.concat(c), []);
 
 /** Remove brackets and slash alternatives
  * @param {string} v
  */
-const sanitizeValue = v => v
-    .replace(/\(.+\)/g, '') // remove brackets
-    .replace(/\/.*$/, '') // remove '/' alternate values
-    .replace(/['" ]/g, '') // quotes
+const sanitizeValue = (v) =>
+  v
+    .replace(/\(.+\)/g, "") // remove brackets
+    .replace(/\/.*$/, "") // remove '/' alternate values
+    .replace(/['" ]/g, ""); // quotes
 
-const values = rawValues
-    .map(({ word, pinyin, level }) => ({
-        word: sanitizeValue(word),
-        pinyin: numberedToAccent(fixPinyin(sanitizeValue(pinyin.toLowerCase()))),
-        level: level
-    }));
+const values = rawValues.map(({ word, pinyin, level, zhuyin }) => ({
+  word: sanitizeValue(word),
+  pinyin: numberedToAccent(fixPinyin(sanitizeValue(pinyin.toLowerCase()))),
+  level,
+  zhuyin,
+}));
 
 // This is where we output the new CSV file
 {
-    const dictionaryDefs = cccedict.parseFile(dictionaryFile);
-    let dictionary = new Map();
-    for(const def of dictionaryDefs) {
-        if(dictionary.has(def.traditional))
-            dictionary.get(def.traditional).push(def);
-        else
-            dictionary.set(def.traditional, [ def ]);
+  const dictionaryDefs = cccedict.parseFile(dictionaryFile);
+  let dictionary = new Map();
+  for (const def of dictionaryDefs) {
+    if (dictionary.has(def.traditional))
+      dictionary.get(def.traditional).push(def);
+    else dictionary.set(def.traditional, [def]);
 
-        if(def.traditional !== def.simplified)
-            dictionary.set(def.simplified, dictionary.get(def.traditional));
+    if (def.traditional !== def.simplified)
+      dictionary.set(def.simplified, dictionary.get(def.traditional));
+  }
+
+  function findInDic(word) {
+    let defs = dictionary.get(word);
+
+    if (defs === undefined) {
+      process.stderr.write(`Can't find in dictionary: ${word}\n`);
+      defs = [];
     }
 
-    function findInDic(word) {
-        let defs = dictionary.get(word);
+    return {
+      pinyin: Array.from(
+        new Set(
+          defs.map((d) =>
+            numberedToAccent(fixPinyin(d.pronunciation.toLowerCase()))
+          )
+        )
+      ).join(" "),
+      translations: defs
+        .map((d) => d.definitions)
+        .reduce((p, c) => p.concat(c), []),
+    };
+  }
 
-        if(defs === undefined) {
-            process.stderr.write(`Can't find in dictionary: ${word}\n`);
-            defs = [];
-        }
+  /** @type{Set<string>} */
+  let done = new Set();
+  const lookup = new Map(values.map((v) => [v.word, v]));
 
-        return {
-            pinyin: Array.from(
-                    new Set(defs.map(d => numberedToAccent(fixPinyin(d.pronunciation.toLowerCase())))))
-                .join(' '),
-            translations: defs
-                .map(d => d.definitions)
-                .reduce((p, c) => p.concat(c), [])
-        };
-    }
+  /** @param {{word: string, pinyin: string, otherPinyin: string, translations: string[], level: number, parent?: {word: string, pinyin: string}, zhuyin: string}} value */
+  function writeValueLine(value) {
+    if (done.has(value.word)) return;
 
-    /** @type{Set<string>} */
-    let done = new Set();
-    const lookup = new Map(values.map(v => [v.word, v]));
+    done.add(value.word);
 
-    /** @param {{word: string, pinyin: string, otherPinyin: string, translations: string[], level: number, parent?: {word: string, pinyin: string}}} value */
-    function writeValueLine(value) {
-        if(done.has(value.word))
-            return;
+    const translations = sortDescriptions(value.translations);
 
-        done.add(value.word);
+    const line = [
+      value.word,
+      value.pinyin,
+      value.otherPinyin,
+      value.level.toString(),
+      translations.slice(0, 1).join(""),
+      translations.slice(1).join(", "),
+      value.parent !== undefined ? value.parent.word : "",
+      value.parent !== undefined ? value.parent.pinyin : "",
+      value.zhuyin,
+    ]
+      .map(csvEscape)
+      .join(separationCharacter);
 
-        const translations = sortDescriptions(value.translations);
+    process.stdout.write(line + "\n");
+  }
 
-        const line = [
-            value.word,
-            value.pinyin,
-            value.otherPinyin,
-            value.level.toString(),
-            translations.slice(0, 1).join(''),
-            translations.slice(1).join(', '),
-            value.parent !== undefined ? value.parent.word : '',
-            value.parent !== undefined ? value.parent.pinyin : ''
-        ]
-            .map(csvEscape)
-            .join(seperationCharacter);
+  // write csv header
+  process.stdout.write(
+    [
+      '"Word"',
+      '"Pinyin"',
+      '"OtherPinyin"',
+      '"Level"',
+      '"First Translation"',
+      '"Other Translations"',
+      '"ParentWord"',
+      '"ParentPinyin"',
+      '"Zhuyin"',
+    ].join(separationCharacter) + "\n"
+  );
 
-        process.stdout.write(line + '\n');
-    }
+  for (const value of values) {
+    /** @type {string[]} */
+    const chars = Array.from(value.word);
 
-    // write csv header
-    process.stdout.write(['"Word"', '"Pinyin"', '"OtherPinyin"', '"Level"', '"First Translation"', '"Other Translations"', '"ParentWord"', '"ParentPinyin"'].join(seperationCharacter) + '\n');
+    if (chars.length === 0)
+      throw new Error(`word has no characters in: ${JSON.stringify(value)}`);
 
-    for(const value of values) {
-        /** @type {string[]} */
-        const chars = Array.from(value.word);
+    const dependsOn = chars.length === 1 ? [] : chars;
 
-        if(chars.length === 0)
-            throw new Error(`word has no characters in: ${JSON.stringify(value)}`);
+    for (const char of dependsOn) {
+      {
+        const def = findInDic(char);
 
-        const dependsOn = chars.length === 1
-            ? []
-            : chars;
+        const pinyins = lookup.has(char)
+          ? [lookup.get(char).pinyin]
+          : def.pinyin.split(" ");
 
-        for(const char of dependsOn) {
-            {
-                const def = findInDic(char);
-
-                const pinyins = lookup.has(char)
-                    ? [lookup.get(char).pinyin]
-                    : def.pinyin.split(' ');
-
-                if(pinyins.length === 0)
-                    pinyins = [''];
-
-                writeValueLine({
-                    word: char,
-                    pinyin: pinyins[0],
-                    otherPinyin: pinyins.slice(1).join(' '),
-                    translations: def.translations,
-                    parent: value,
-                    level: value.level
-                });
-            }
-        }
-
-        const def = findInDic(value.word);
+        if (pinyins.length === 0) pinyins = [""];
 
         writeValueLine({
-            ...value,
-            otherPinyin: '',
-            translations: def.translations
+          word: char,
+          pinyin: pinyins[0],
+          otherPinyin: pinyins.slice(1).join(" "),
+          translations: def.translations,
+          parent: value,
+          level: value.level,
+          zhuyin: value.zhuyin,
         });
+      }
     }
+
+    const def = findInDic(value.word);
+
+    writeValueLine({
+      ...value,
+      otherPinyin: "",
+      translations: def.translations,
+    });
+  }
 }
-
-
