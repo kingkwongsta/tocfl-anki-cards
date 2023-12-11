@@ -1,3 +1,8 @@
+/**
+ * Use the following command in terminal
+ * node [filename.js] [level] > [output.csv]
+ */
+
 const fs = require("fs");
 const cccedict = require("parse-cc-cedict");
 
@@ -13,6 +18,9 @@ const importFiles = fs
   .readdirSync(dataDir)
   .filter((file) => file.endsWith(".csv"))
   .map((file) => `${dataDir}/${file}`);
+
+// Get user-specified level from command line arguments
+const userLevel = process.argv[2] ? parseInt(process.argv[2]) : null;
 
 /**
  * Read the Zhuyin (注音) column from a CSV file
@@ -60,6 +68,12 @@ if (process.argv.length > 2 && process.argv[2] === "--tabs") {
 const rawValues = importFiles
   .map((fileName) => {
     const level = parseInt(/^.*\/(\d+)\.csv$/.exec(fileName)[1]);
+
+    // Filter based on user-specified level
+    if (userLevel !== null && level !== userLevel) {
+      return [];
+    }
+
     const contents = fs.readFileSync(`${fileName}`, "utf8");
     const lines = contents.split("\n");
     const headers = lines[0].split(",");
