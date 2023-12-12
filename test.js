@@ -1,3 +1,8 @@
+/**
+ * Use the following command in terminal
+ * node [filename.js] [level] > [output.csv]
+ */
+
 const fs = require("fs");
 const cccedict = require("parse-cc-cedict");
 const { csvEscape } = require("./escape");
