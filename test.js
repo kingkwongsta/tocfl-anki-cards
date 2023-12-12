@@ -87,18 +87,16 @@ function writeValueLine(value, done) {
   const translations = sortDescriptions(value.translations);
 
   const line = [
-    value.word,
-    value.pinyin,
-    value.otherPinyin,
-    `Level ${value.level}`,
-    translations.slice(0, 1).join(""),
-    translations.slice(1).join(", "),
-    value.parent !== undefined ? value.parent.word : "",
-    value.parent !== undefined ? value.parent.pinyin : "",
-    value.zhuyin,
-  ]
-    .map(csvEscape)
-    .join(SEPARATION_CHARACTER);
+    `"${value.word}"`,
+    `"${value.pinyin}"`,
+    `"${value.otherPinyin}"`,
+    `"Level ${value.level}"`,
+    `"${translations.slice(0, 1).join("")}"`,
+    `"${translations.slice(1).join(", ")}"`,
+    `"${value.parent !== undefined ? value.parent.word : ""}"`,
+    `"${value.parent !== undefined ? value.parent.pinyin : ""}"`,
+    `"${value.zhuyin}"`,
+  ].join(SEPARATION_CHARACTER);
 
   process.stdout.write(line + "\n");
 }
@@ -174,12 +172,15 @@ function main() {
       .map((file) => {
         const fileName = `${DATA_DIR}/${file}`;
         const level = parseInt(/^.*\/(\d+)\.csv$/.exec(fileName)[1]);
+        const zhuyinColumn = readZhuyinColumn(fileName);
         return {
-          word: file,
+          word: file.replace(".csv", ""),
           level,
-          zhuyinColumn: readZhuyinColumn(fileName),
+          zhuyinColumn,
         };
       });
+
+    console.log("importFiles:", importFiles); // Add this line for debugging
 
     const userLevel = process.argv[2] ? parseInt(process.argv[2]) : null;
 
