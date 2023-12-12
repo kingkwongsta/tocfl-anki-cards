@@ -1,6 +1,12 @@
+// Run script using the command node tocfl-words-main.js
+// following the command line questions
+
 const fs = require("fs");
+const path = require("path");
 const readline = require("readline");
 const { csvEscape, unEscape } = require("./escape");
+
+const OUTPUT_FOLDER = "./output";
 
 function readContentsFromFile(fileName) {
   return fs.readFileSync(fileName, "utf8");
@@ -51,7 +57,12 @@ function getOutputFileName() {
   return new Promise((resolve) => {
     rl.question("Enter the desired output file name: ", (fileName) => {
       rl.close();
-      resolve(fileName);
+      // Append .csv if not already present
+      const normalizedFileName = fileName.endsWith(".csv")
+        ? fileName
+        : fileName + ".csv";
+      const fullPath = path.join(OUTPUT_FOLDER, normalizedFileName);
+      resolve(fullPath);
     });
   });
 }
@@ -67,6 +78,11 @@ async function main() {
 
   // Get user input for the desired output file name
   const outputFileName = await getOutputFileName();
+
+  // Ensure the "output" folder exists
+  if (!fs.existsSync(OUTPUT_FOLDER)) {
+    fs.mkdirSync(OUTPUT_FOLDER);
+  }
 
   // write header
   const headers =
