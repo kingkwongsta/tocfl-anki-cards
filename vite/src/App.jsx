@@ -1,35 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+import { CSVLink } from "react-csv";
+
+const ExportButton = () => {
+  // Example data (replace this with your actual data)
+  const xyzData = [
+    ["Name", "Age", "City"],
+    ["John Doe", 25, "New York"],
+    ["Jane Doe", 30, "San Francisco"],
+  ];
+
+  // CSVLink data
+  const csvData = [...xyzData];
 
   return (
+    <div>
+      <CSVLink data={csvData} filename={"xyz_data.csv"}>
+        <button>Export CSV</button>
+      </CSVLink>
+    </div>
+  );
+};
+
+function App() {
+  return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <div>Hello</div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
