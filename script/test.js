@@ -243,6 +243,7 @@ function main() {
 
     // Log the resultArray or use it as needed
     console.log(resultArray);
+    console.log("test test test");
   } catch (error) {
     console.error(`Error: ${error.message}`);
   }
