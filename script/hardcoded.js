@@ -3,7 +3,7 @@ const cccedict = require("parse-cc-cedict");
 const { csvEscape } = require("./escape");
 const { numberedToAccent, fixPinyin } = require("./pinyin");
 const { sortDescriptions } = require("./sort-descriptions");
-import { parsedDictionary } from "./data/DictData.js";
+const parsedDictionary = require("./data/dictdata");
 
 const dataDir = "./data";
 const dictionaryFile = `${dataDir}/cedict_1_0_ts_utf-8_mdbg.txt`;
@@ -108,7 +108,7 @@ function processValues(rawValues) {
 function buildDictionary() {
   const dictionaryDefs = cccedict.parseFile(dictionaryFile);
   let dictionary = new Map();
-  for (const def of parsedDictionary) {
+  for (const def of dictionaryDefs) {
     if (dictionary.has(def.traditional))
       dictionary.get(def.traditional).push(def);
     else dictionary.set(def.traditional, [def]);
@@ -165,26 +165,41 @@ function writeValueLine(value, done, separationCharacter) {
   process.stdout.write(line + "\n");
 }
 
+function findInDictionary(word, dictionary) {
+  const entry = dictionary.find(
+    (entry) => entry.traditional === word || entry.simplified === word
+  );
+
+  if (entry === undefined) {
+    process.stderr.write(`Can't find in dictionary: ${word}\n`);
+    return { pinyin: "", translations: [] };
+  }
+
+  return {
+    pinyin: numberedToAccent(fixPinyin(entry.pronunciation.toLowerCase())),
+    translations: entry.definitions,
+  };
+}
+
 function processFiles(importFiles, userLevel, separationCharacter) {
-  //   const dictionary = buildDictionary();
   const dictionary = parsedDictionary;
   const values = processCSVFiles(importFiles, userLevel);
   const done = new Set();
   const lookup = new Map(values.map((v) => [v.word, v]));
 
-  const resultArray = [
+  process.stdout.write(
     [
-      "Word",
-      "Pinyin",
-      "OtherPinyin",
-      "Level",
-      "First Translation",
-      "Other Translations",
-      "ParentWord",
-      "ParentPinyin",
-      "Zhuyin",
-    ],
-  ];
+      '"Word"',
+      '"Pinyin"',
+      '"OtherPinyin"',
+      '"Level"',
+      '"First Translation"',
+      '"Other Translations"',
+      '"ParentWord"',
+      '"ParentPinyin"',
+      '"Zhuyin"',
+    ].join(separationCharacter) + "\n"
+  );
 
   for (const value of values) {
     const chars = Array.from(value.word);
@@ -195,55 +210,51 @@ function processFiles(importFiles, userLevel, separationCharacter) {
     const dependsOn = chars.length === 1 ? [] : chars;
 
     for (const char of dependsOn) {
-      const def = findInDictionary(char, dictionary);
+      {
+        const def = findInDictionary(char, dictionary);
 
-      let pinyins = lookup.has(char)
-        ? [lookup.get(char).pinyin]
-        : def.pinyin.split(" ");
+        let pinyins = lookup.has(char)
+          ? [lookup.get(char).pinyin]
+          : def.pinyin.split(" ");
 
-      if (pinyins.length === 0) pinyins = [""];
+        if (pinyins.length === 0) pinyins = [""];
 
-      resultArray.push([
-        char,
-        pinyins[0],
-        pinyins.slice(1).join(" "),
-        `Level ${value.level}`,
-        def.translations.slice(0, 1).join(""),
-        def.translations.slice(1).join(", "),
-        value.word,
-        value.pinyin,
-        value.zhuyin,
-      ]);
+        writeValueLine(
+          {
+            word: char,
+            pinyin: pinyins[0],
+            otherPinyin: pinyins.slice(1).join(" "),
+            translations: def.translations,
+            parent: value,
+            level: value.level,
+            zhuyin: value.zhuyin,
+          },
+          done,
+          separationCharacter
+        );
+      }
     }
 
     const def = findInDictionary(value.word, dictionary);
 
-    resultArray.push([
-      value.word,
-      value.pinyin,
-      "",
-      `Level ${value.level}`,
-      def.translations.slice(0, 1).join(""),
-      def.translations.slice(1).join(", "),
-      "",
-      "",
-      value.zhuyin,
-    ]);
-
-    done.add(value.word);
+    writeValueLine(
+      {
+        ...value,
+        otherPinyin: "",
+        translations: def.translations,
+      },
+      done,
+      separationCharacter
+    );
   }
-
-  return resultArray;
 }
 
-export function main() {
+function main() {
   try {
     const importFiles = getCSVFiles(dataDir);
     const userLevel = getUserLevel();
 
-    const resultArray = processFiles(importFiles, userLevel, ",");
-
-    return resultArray;
+    processFiles(importFiles, userLevel, ",");
   } catch (error) {
     console.error(`Error: ${error.message}`);
   }

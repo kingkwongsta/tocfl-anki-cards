@@ -3,6 +3,7 @@ const cccedict = require("parse-cc-cedict");
 const { csvEscape } = require("./escape");
 const { numberedToAccent, fixPinyin } = require("./pinyin");
 const { sortDescriptions } = require("./sort-descriptions");
+const parsedDictionary = require("./data/dictdata");
 
 const dataDir = "./data";
 const dictionaryFile = `${dataDir}/cedict_1_0_ts_utf-8_mdbg.txt`;
@@ -164,8 +165,24 @@ function writeValueLine(value, done, separationCharacter) {
   process.stdout.write(line + "\n");
 }
 
+function findInDictionary(word, dictionary) {
+  const entry = dictionary.find(
+    (entry) => entry.traditional === word || entry.simplified === word
+  );
+
+  if (entry === undefined) {
+    process.stderr.write(`Can't find in dictionary: ${word}\n`);
+    return { pinyin: "", translations: [] };
+  }
+
+  return {
+    pinyin: numberedToAccent(fixPinyin(entry.pronunciation.toLowerCase())),
+    translations: entry.definitions,
+  };
+}
+
 function processFiles(importFiles, userLevel, separationCharacter) {
-  const dictionary = buildDictionary();
+  const dictionary = parsedDictionary;
   const values = processCSVFiles(importFiles, userLevel);
   const done = new Set();
   const lookup = new Map(values.map((v) => [v.word, v]));
