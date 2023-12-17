@@ -1,16 +1,24 @@
 {
-    "scripts": {
-        "tocfl-chars": "node tocfl-chars.js ./data/*.csv > dist/tocfl-and-chars.csv && node tocfl-chars.js --tabs ./data/*.csv > dist/tocfl-and-chars.tsv",
-        "tocfl-words": "node tocfl-words.js > ./dist/tocfl.csv && node tocfl-words.js --tabs > ./dist/tocfl.tsv",
-        "simplified-chars": "node simplified-chars.js > ./dist/simplified-and-chars.csv && node simplified-chars.js --tabs > ./dist/simplified-and-chars.tsv",
-        "simplified-words": "node simplified-words.js > ./dist/simplified.csv && node simplified-words.js --tabs > ./dist/simplified.tsv",
-        "tts": "node tts.js > ./dist/tts.csv && node tts.js --tabs > ./dist/tts.tsv",
-        "start": "mkdir -p dist && npm run tocfl-chars && npm run tocfl-words && npm run simplified-chars && npm run simplified-words && npm run tts"
-    },
-    "devDependencies": {
-        "@types/node": "^10.5.8"
-    },
-    "dependencies": {
-        "parse-cc-cedict": "^2.1.0"
-    }
+  "scripts": {
+    "tocfl-chars": "node tocfl-chars.js ./data/*.csv > dist/tocfl-and-chars.csv && node tocfl-chars.js --tabs ./data/*.csv > dist/tocfl-and-chars.tsv",
+    "tocfl-words": "node tocfl-words.js > ./dist/tocfl.csv && node tocfl-words.js --tabs > ./dist/tocfl.tsv",
+    "simplified-chars": "node simplified-chars.js > ./dist/simplified-and-chars.csv && node simplified-chars.js --tabs > ./dist/simplified-and-chars.tsv",
+    "simplified-words": "node simplified-words.js > ./dist/simplified.csv && node simplified-words.js --tabs > ./dist/simplified.tsv",
+    "tts": "node tts.js > ./dist/tts.csv && node tts.js --tabs > ./dist/tts.tsv",
+    "start": "mkdir -p dist && npm run tocfl-chars && npm run tocfl-words && npm run simplified-chars && npm run simplified-words && npm run tts"
+  },
+  "devDependencies": {
+    "@types/node": "^10.5.8",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "parse-cc-cedict": "^2.1.0"
+  },
+  "name": "script",
+  "description": "Modification in progress of https://github.com/tomcumming/tocfl-word-list",
+  "version": "1.0.0",
+  "main": "escape.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
