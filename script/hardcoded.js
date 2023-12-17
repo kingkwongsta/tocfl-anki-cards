@@ -1,3 +1,8 @@
+/**
+ * Run file by: node hardcoded.js [Level] > [Output.csv]
+ * 12/17/23: replaced data dictionary to be hardcoded using ./data/dictdata.js file
+ */
+
 const fs = require("fs");
 const cccedict = require("parse-cc-cedict");
 const { csvEscape } = require("./escape");
@@ -105,19 +110,20 @@ function processValues(rawValues) {
   }));
 }
 
-function buildDictionary() {
-  const dictionaryDefs = cccedict.parseFile(dictionaryFile);
-  let dictionary = new Map();
-  for (const def of dictionaryDefs) {
-    if (dictionary.has(def.traditional))
-      dictionary.get(def.traditional).push(def);
-    else dictionary.set(def.traditional, [def]);
+//******* Can remove since hardcoded now *******
+// function buildDictionary() {
+//   const dictionaryDefs = cccedict.parseFile(dictionaryFile);
+//   let dictionary = new Map();
+//   for (const def of dictionaryDefs) {
+//     if (dictionary.has(def.traditional))
+//       dictionary.get(def.traditional).push(def);
+//     else dictionary.set(def.traditional, [def]);
 
-    if (def.traditional !== def.simplified)
-      dictionary.set(def.simplified, dictionary.get(def.traditional));
-  }
-  return dictionary;
-}
+//     if (def.traditional !== def.simplified)
+//       dictionary.set(def.simplified, dictionary.get(def.traditional));
+//   }
+//   return dictionary;
+// }
 
 function findInDictionary(word, dictionary) {
   let defs = dictionary.get(word);
