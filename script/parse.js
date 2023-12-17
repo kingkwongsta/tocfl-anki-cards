@@ -1,4 +1,5 @@
-const { readFileSync } = require("fs");
+const { readFileSync, writeFileSync } = require("fs");
+const path = require("path");
 
 const lineRegex = /(\S+)\s+(\S+)\s+\[([^\]]*)\]\s+\/(.*)\/\s*$/;
 
@@ -15,7 +16,7 @@ function parse(contents) {
         pronunciation: match[3],
         definitions: match[4].split("/"),
       });
-    else console.error(`Invalid line format ${i + 1}: ${line}`);
+    else process.stderr.write(`Invalid line format ${i + 1}: ${line}\n`);
   });
   return definitions;
 }
@@ -25,4 +26,19 @@ function parseFile(filename) {
   return parse(contents);
 }
 
-module.exports = { parse, parseFile };
+// Specify the relative path to the "data" folder
+const dataFolder = "data";
+
+// Specify the input file name (relative to the script's location)
+const inputFile = path.join(__dirname, dataFolder, "cedict_ts.u8");
+
+// Parse the file
+const result = parseFile(inputFile);
+
+// Specify the output file name
+const outputFile = "output.json";
+
+// Write the result to a JSON file
+writeFileSync(outputFile, JSON.stringify(result, null, 2));
+
+console.log(`Result has been written to ${outputFile}`);
