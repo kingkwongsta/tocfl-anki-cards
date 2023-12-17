@@ -3,7 +3,7 @@ const cccedict = require("parse-cc-cedict");
 const { csvEscape } = require("./escape");
 const { numberedToAccent, fixPinyin } = require("./pinyin");
 const { sortDescriptions } = require("./sort-descriptions");
-const parsedDictionary = "./data/DictData.js";
+import { parsedDictionary } from "./data/DictData.js";
 
 const dataDir = "./data";
 const dictionaryFile = `${dataDir}/cedict_1_0_ts_utf-8_mdbg.txt`;
@@ -106,7 +106,7 @@ function processValues(rawValues) {
 }
 
 function buildDictionary() {
-  //   const dictionaryDefs = cccedict.parseFile(dictionaryFile);
+  const dictionaryDefs = cccedict.parseFile(dictionaryFile);
   let dictionary = new Map();
   for (const def of parsedDictionary) {
     if (dictionary.has(def.traditional))
@@ -166,7 +166,8 @@ function writeValueLine(value, done, separationCharacter) {
 }
 
 function processFiles(importFiles, userLevel, separationCharacter) {
-  const dictionary = buildDictionary();
+  //   const dictionary = buildDictionary();
+  const dictionary = parsedDictionary;
   const values = processCSVFiles(importFiles, userLevel);
   const done = new Set();
   const lookup = new Map(values.map((v) => [v.word, v]));

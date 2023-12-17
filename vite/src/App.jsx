@@ -1,5 +1,7 @@
 import "./App.css";
 import { CSVLink } from "react-csv";
+import {paraseFile} from "./../lib/DictParser"
+import dictionary from "./../lib/"
 
 const ExportButton = () => {
   // Example data (replace this with your actual data)

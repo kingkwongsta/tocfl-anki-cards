@@ -170,19 +170,19 @@ function processFiles(importFiles, userLevel, separationCharacter) {
   const done = new Set();
   const lookup = new Map(values.map((v) => [v.word, v]));
 
-  const resultArray = [
+  process.stdout.write(
     [
-      "Word",
-      "Pinyin",
-      "OtherPinyin",
-      "Level",
-      "First Translation",
-      "Other Translations",
-      "ParentWord",
-      "ParentPinyin",
-      "Zhuyin",
-    ],
-  ];
+      '"Word"',
+      '"Pinyin"',
+      '"OtherPinyin"',
+      '"Level"',
+      '"First Translation"',
+      '"Other Translations"',
+      '"ParentWord"',
+      '"ParentPinyin"',
+      '"Zhuyin"',
+    ].join(separationCharacter) + "\n"
+  );
 
   for (const value of values) {
     const chars = Array.from(value.word);
@@ -193,55 +193,51 @@ function processFiles(importFiles, userLevel, separationCharacter) {
     const dependsOn = chars.length === 1 ? [] : chars;
 
     for (const char of dependsOn) {
-      const def = findInDictionary(char, dictionary);
+      {
+        const def = findInDictionary(char, dictionary);
 
-      let pinyins = lookup.has(char)
-        ? [lookup.get(char).pinyin]
-        : def.pinyin.split(" ");
+        let pinyins = lookup.has(char)
+          ? [lookup.get(char).pinyin]
+          : def.pinyin.split(" ");
 
-      if (pinyins.length === 0) pinyins = [""];
+        if (pinyins.length === 0) pinyins = [""];
 
-      resultArray.push([
-        char,
-        pinyins[0],
-        pinyins.slice(1).join(" "),
-        `Level ${value.level}`,
-        def.translations.slice(0, 1).join(""),
-        def.translations.slice(1).join(", "),
-        value.word,
-        value.pinyin,
-        value.zhuyin,
-      ]);
+        writeValueLine(
+          {
+            word: char,
+            pinyin: pinyins[0],
+            otherPinyin: pinyins.slice(1).join(" "),
+            translations: def.translations,
+            parent: value,
+            level: value.level,
+            zhuyin: value.zhuyin,
+          },
+          done,
+          separationCharacter
+        );
+      }
     }
 
     const def = findInDictionary(value.word, dictionary);
 
-    resultArray.push([
-      value.word,
-      value.pinyin,
-      "",
-      `Level ${value.level}`,
-      def.translations.slice(0, 1).join(""),
-      def.translations.slice(1).join(", "),
-      "",
-      "",
-      value.zhuyin,
-    ]);
-
-    done.add(value.word);
+    writeValueLine(
+      {
+        ...value,
+        otherPinyin: "",
+        translations: def.translations,
+      },
+      done,
+      separationCharacter
+    );
   }
-
-  return resultArray;
 }
 
-export function main() {
+function main() {
   try {
     const importFiles = getCSVFiles(dataDir);
     const userLevel = getUserLevel();
 
-    const resultArray = processFiles(importFiles, userLevel, ",");
-
-    return resultArray;
+    processFiles(importFiles, userLevel, ",");
   } catch (error) {
     console.error(`Error: ${error.message}`);
   }
