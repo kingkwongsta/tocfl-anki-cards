@@ -248,15 +248,4 @@ function main() {
   }
 }
 
-function main() {
-  try {
-    const importFiles = getCSVFiles(dataDir);
-    const userLevel = getUserLevel();
-
-    processFiles(importFiles, userLevel, ",");
-  } catch (error) {
-    console.error(`Error: ${error.message}`);
-  }
-}
-
 main();
