@@ -1,6 +1,6 @@
 import "./App.css";
-
 import { CSVLink } from "react-csv";
+import { main } from "../../script/test";
 
 const ExportButton = () => {
   // Example data (replace this with your actual data)
@@ -44,6 +44,7 @@ const ExportButton = () => {
   // CSVLink data
   const csvData = [...xyzData];
 
+  // console.log(main());
   return (
     <div>
       <CSVLink data={csvData} filename={"xyz_data.csv"}>

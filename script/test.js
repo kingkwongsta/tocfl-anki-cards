@@ -234,16 +234,14 @@ function processFiles(importFiles, userLevel, separationCharacter) {
   return resultArray;
 }
 
-function main() {
+export function main() {
   try {
     const importFiles = getCSVFiles(dataDir);
     const userLevel = getUserLevel();
 
     const resultArray = processFiles(importFiles, userLevel, ",");
 
-    // Log the resultArray or use it as needed
-    console.log(resultArray);
-    console.log("test test test");
+    return resultArray;
   } catch (error) {
     console.error(`Error: ${error.message}`);
   }
