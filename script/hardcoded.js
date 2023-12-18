@@ -113,21 +113,6 @@ function processValues(rawValues) {
   }));
 }
 
-//******* Can remove since hardcoded now *******
-// function buildDictionary() {
-//   const dictionaryDefs = cccedict.parseFile(dictionaryFile);
-//   let dictionary = new Map();
-//   for (const def of dictionaryDefs) {
-//     if (dictionary.has(def.traditional))
-//       dictionary.get(def.traditional).push(def);
-//     else dictionary.set(def.traditional, [def]);
-
-//     if (def.traditional !== def.simplified)
-//       dictionary.set(def.simplified, dictionary.get(def.traditional));
-//   }
-//   return dictionary;
-// }
-
 function findInDictionary(word, dictionary) {
   let defs = dictionary.get(word);
 
