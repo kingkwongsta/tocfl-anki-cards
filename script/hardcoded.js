@@ -1,6 +1,9 @@
 /**
+ * TOCFL Characters
+ *  - goal will be to replace all values with hardcoded data and not have to run Node
  * Run file by: node hardcoded.js [Level] > [Output.csv]
  * 12/17/23: replaced data dictionary to be hardcoded using ./data/dictdata.js file
+ *
  */
 
 const fs = require("fs");
